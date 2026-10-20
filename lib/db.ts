@@ -19,18 +19,27 @@ for (const key of requiredEnv) {
 }
 
 function getCaCertificate(): string {
-  // Vercel: sertifikat dari environment variable
+  // Vercel: gunakan sertifikat dari environment variable
   const base64Cert = process.env.DB_CA_CERT_BASE64;
 
   if (base64Cert) {
-    return Buffer.from(base64Cert, "base64").toString("utf8");
+    const certificate = Buffer.from(base64Cert.trim(), "base64").toString(
+      "utf8",
+    );
+
+    if (!certificate.includes("-----BEGIN CERTIFICATE-----")) {
+      throw new Error("Invalid DB_CA_CERT_BASE64 value");
+    }
+
+    return certificate;
   }
 
-  // Local: sertifikat dari file certs/ca.pem
+  // Local Mac: gunakan file sertifikat
   const certPath = process.env.DB_CA_CERT_PATH;
 
   if (certPath) {
-    return fs.readFileSync(path.resolve(process.cwd(), certPath), "utf8");
+    const certificatePath = path.join(process.cwd(), "certs", "ca.pem");
+    return fs.readFileSync(certificatePath, "utf8");
   }
 
   throw new Error("DB_CA_CERT_BASE64 or DB_CA_CERT_PATH is required");
@@ -44,6 +53,7 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME!,
 
   ssl: {
+    ca: getCaCertificate(),
     rejectUnauthorized: true,
   },
 
