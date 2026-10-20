@@ -7,7 +7,7 @@ import { LayoutDashboard, ReceiptText } from "lucide-react";
 const navigation = [
   {
     name: "Dashboard",
-    href: "/",
+    href: "/dashboard",
     icon: LayoutDashboard,
   },
   {
