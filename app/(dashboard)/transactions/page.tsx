@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -49,7 +50,7 @@ function formatDate(date: string) {
 }
 
 export default function TransactionsPage() {
-  // Data berasal dari MySQL, bukan dummy data.
+  // Transactions Data
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -58,20 +59,25 @@ export default function TransactionsPage() {
   const saveInProgress = useRef(false);
   const deleteInProgress = useRef(false);
 
+  // Search & Filter
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterType>("all");
 
+  // Add & Edit Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
+
   const [editingTransaction, setEditingTransaction] =
     useState<Transaction | null>(null);
 
+  // Delete Modal
   const [deletingTransaction, setDeletingTransaction] =
     useState<Transaction | null>(null);
 
+  // Feedback
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
 
-  // GET - Ambil transaksi pengguna dari MySQL.
+  // GET Transactions
   const loadTransactions = useCallback(async () => {
     try {
       setError("");
@@ -98,12 +104,33 @@ export default function TransactionsPage() {
     }
   }, []);
 
-  // Ambil data ketika halaman dibuka.
+  // Load Transactions
   useEffect(() => {
     void loadTransactions();
   }, [loadTransactions]);
 
-  // Search dan filter tetap dilakukan di frontend.
+  // Open Add Modal from Dashboard
+  useEffect(() => {
+    const url = new URL(window.location.href);
+
+    if (url.searchParams.get("add") !== "true") {
+      return;
+    }
+
+    setEditingTransaction(null);
+    setIsModalOpen(true);
+
+    // Hapus parameter setelah modal dibuka.
+    url.searchParams.delete("add");
+
+    window.history.replaceState(
+      window.history.state,
+      "",
+      url.pathname + url.search + url.hash,
+    );
+  }, []);
+
+  // Filter Transactions
   const filteredTransactions = useMemo(() => {
     const keyword = search.toLowerCase().trim();
 
@@ -118,22 +145,25 @@ export default function TransactionsPage() {
     });
   }, [transactions, search, filter]);
 
+  // Open Add Modal
   function openAddModal() {
-    if (saving) return;
+    if (saving || loading) return;
 
     setError("");
     setEditingTransaction(null);
     setIsModalOpen(true);
   }
 
+  // Open Edit Modal
   function openEditModal(transaction: Transaction) {
-    if (saving) return;
+    if (saving || deleting) return;
 
     setError("");
     setEditingTransaction(transaction);
     setIsModalOpen(true);
   }
 
+  // Close Modal
   function closeModal() {
     if (saving) return;
 
@@ -141,7 +171,7 @@ export default function TransactionsPage() {
     setEditingTransaction(null);
   }
 
-  // POST / PATCH - Simpan transaksi ke MySQL.
+  // POST / PATCH Transactions
   async function handleSave(data: TransactionFormData) {
     if (saveInProgress.current) return;
 
@@ -174,7 +204,6 @@ export default function TransactionsPage() {
         throw new Error(result.message || "Failed to save transaction.");
       }
 
-      // Tutup modal hanya setelah API berhasil.
       setIsModalOpen(false);
       setEditingTransaction(null);
 
@@ -184,7 +213,6 @@ export default function TransactionsPage() {
           : "Transaction added successfully.",
       );
 
-      // Sinkronkan tabel dengan data terbaru dari MySQL.
       await loadTransactions();
     } catch (err) {
       setError(
@@ -196,7 +224,7 @@ export default function TransactionsPage() {
     }
   }
 
-  // DELETE - Hapus transaksi dari MySQL.
+  // DELETE Transactions
   async function handleDelete() {
     if (!deletingTransaction || deleteInProgress.current) return;
 
@@ -223,7 +251,6 @@ export default function TransactionsPage() {
       setDeletingTransaction(null);
       setNotice("Transaction deleted successfully.");
 
-      // Ambil ulang daftar transaksi dari database.
       await loadTransactions();
     } catch (err) {
       setError(
@@ -398,6 +425,7 @@ export default function TransactionsPage() {
                       key={transaction.id}
                       className="border-b border-border last:border-0"
                     >
+                      {/* Name */}
                       <td className="py-4">
                         <div className="flex items-center gap-3">
                           <div
@@ -420,14 +448,17 @@ export default function TransactionsPage() {
                         </div>
                       </td>
 
+                      {/* Category */}
                       <td className="py-4 text-text-secondary">
                         {transaction.category}
                       </td>
 
+                      {/* Date */}
                       <td className="py-4 text-text-secondary">
                         {formatDate(transaction.date)}
                       </td>
 
+                      {/* Type */}
                       <td className="py-4">
                         <span
                           className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
@@ -440,6 +471,7 @@ export default function TransactionsPage() {
                         </span>
                       </td>
 
+                      {/* Amount */}
                       <td
                         className={`py-4 text-right font-semibold ${
                           isIncome ? "text-income" : "text-expense"
@@ -449,6 +481,7 @@ export default function TransactionsPage() {
                         {formatRupiah(transaction.amount)}
                       </td>
 
+                      {/* Actions */}
                       <td className="py-4">
                         <div className="flex justify-end gap-2">
                           <button

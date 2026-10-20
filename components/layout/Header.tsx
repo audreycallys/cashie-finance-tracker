@@ -2,8 +2,11 @@
 
 import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Header() {
+  const router = useRouter();
+
   const [currentDate, setCurrentDate] = useState<Date | null>(null);
 
   useEffect(() => {
@@ -29,6 +32,10 @@ export default function Header() {
       })
     : "";
 
+  function handleAddTransaction() {
+    router.push("/transactions?add=true");
+  }
+
   return (
     <header className="mb-10 flex flex-wrap items-end justify-between gap-6">
       <div>
@@ -45,12 +52,8 @@ export default function Header() {
 
       <button
         type="button"
+        onClick={handleAddTransaction}
         className="flex items-center gap-2 rounded-xl bg-primary px-5 py-3 font-medium text-white transition-colors hover:bg-primary-hover"
-        onClick={() => {
-          window.alert(
-            "Fitur Add Transaction akan dibuat pada tahap Transactions.",
-          );
-        }}
       >
         <Plus size={18} />
         Add Transaction
