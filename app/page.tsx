@@ -1,6 +1,9 @@
 import SummaryCard from "@/components/dashboard/SummaryCard";
 import Header from "@/components/layout/Header";
 import Sidebar from "@/components/layout/Sidebar";
+import RecentTransactions, {
+  type Transaction,
+} from "@/components/dashboard/RecentTransactions";
 
 import {
   ArrowDownLeft,
@@ -53,33 +56,37 @@ const chartData = [
   { month: "Oct", income: 90, expense: 55 },
 ];
 
-const transactions = [
+const transactions: Transaction[] = [
   {
+    id: 1,
     name: "Monthly Salary",
     category: "Salary",
     date: "18 Oct 2026",
-    amount: "+Rp 7.500.000",
+    amount: 7500000,
     type: "income",
   },
   {
+    id: 2,
     name: "Grocery Shopping",
     category: "Food & Drinks",
     date: "17 Oct 2026",
-    amount: "-Rp 250.000",
+    amount: 250000,
     type: "expense",
   },
   {
+    id: 3,
     name: "Freelance Project",
     category: "Freelance",
     date: "15 Oct 2026",
-    amount: "+Rp 2.000.000",
+    amount: 2000000,
     type: "income",
   },
   {
+    id: 4,
     name: "Transportation",
     category: "Transport",
     date: "14 Oct 2026",
-    amount: "-Rp 75.000",
+    amount: 75000,
     type: "expense",
   },
 ];
@@ -110,52 +117,8 @@ export default function HomePage() {
             ))}
           </section>
 
-          {/* Recent transactions */}
-          <section className="mt-7 rounded-2xl border border-border bg-white p-5 shadow-sm sm:p-7">
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Recent Transactions</h2>
-              <span className="text-sm font-medium text-primary">View All</span>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[520px] text-left text-sm">
-                <thead>
-                  <tr className="border-b border-border text-text-secondary">
-                    <th className="pb-4 font-medium">Transaction</th>
-                    <th className="pb-4 font-medium">Category</th>
-                    <th className="pb-4 font-medium">Date</th>
-                    <th className="pb-4 text-right font-medium">Amount</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {transactions.map((transaction) => (
-                    <tr
-                      key={`${transaction.name}-${transaction.date}`}
-                      className="border-b border-border last:border-0"
-                    >
-                      <td className="py-4 font-medium">{transaction.name}</td>
-                      <td className="py-4 text-text-secondary">
-                        {transaction.category}
-                      </td>
-                      <td className="py-4 text-text-secondary">
-                        {transaction.date}
-                      </td>
-                      <td
-                        className={`py-4 text-right font-semibold ${
-                          transaction.type === "income"
-                            ? "text-income"
-                            : "text-expense"
-                        }`}
-                      >
-                        {transaction.amount}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
+          {/* Recent Transactions */}
+          <RecentTransactions transactions={transactions} />
         </main>
       </div>
     </div>
