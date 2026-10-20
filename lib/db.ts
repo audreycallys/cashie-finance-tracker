@@ -10,7 +10,6 @@ const requiredEnv = [
   "DB_USER",
   "DB_PASSWORD",
   "DB_NAME",
-  "DB_CA_CERT_PATH",
 ] as const;
 
 for (const key of requiredEnv) {
@@ -19,7 +18,23 @@ for (const key of requiredEnv) {
   }
 }
 
-const caPath = path.resolve(process.cwd(), process.env.DB_CA_CERT_PATH!);
+function getCaCertificate(): string {
+  // Vercel: sertifikat dari environment variable
+  const base64Cert = process.env.DB_CA_CERT_BASE64;
+
+  if (base64Cert) {
+    return Buffer.from(base64Cert, "base64").toString("utf8");
+  }
+
+  // Local: sertifikat dari file certs/ca.pem
+  const certPath = process.env.DB_CA_CERT_PATH;
+
+  if (certPath) {
+    return fs.readFileSync(path.resolve(process.cwd(), certPath), "utf8");
+  }
+
+  throw new Error("DB_CA_CERT_BASE64 or DB_CA_CERT_PATH is required");
+}
 
 const pool = mysql.createPool({
   host: process.env.DB_HOST!,
@@ -29,7 +44,7 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME!,
 
   ssl: {
-    ca: fs.readFileSync(caPath, "utf8"),
+    ca: getCaCertificate(),
     rejectUnauthorized: true,
   },
 
