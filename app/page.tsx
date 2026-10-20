@@ -1,3 +1,4 @@
+import Header from "@/components/layout/Header";
 import Sidebar from "@/components/layout/Sidebar";
 
 import {
@@ -92,27 +93,7 @@ export default function HomePage() {
         {/* Main */}
         <main className="min-w-0 flex-1 bg-background-secondary px-5 py-8 sm:px-8 lg:px-10 lg:py-12">
           {/* Header */}
-          <header className="mb-10 flex flex-wrap items-end justify-between gap-6">
-            <div>
-              <p className="mb-3 text-sm text-text-secondary">
-                Sunday, October 18, 2026
-              </p>
-              <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">
-                Good evening!
-              </h1>
-              <p className="mt-3 text-text-secondary">
-                Here&apos;s your financial overview.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              className="flex items-center gap-2 rounded-xl bg-primary px-5 py-3 font-medium text-white transition-colors hover:bg-primary-hover"
-            >
-              <Plus size={18} />
-              Add Transaction
-            </button>
-          </header>
+          <Header />
 
           {/* Summary cards */}
           <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
