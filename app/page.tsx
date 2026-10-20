@@ -1,3 +1,4 @@
+import SummaryCard from "@/components/dashboard/SummaryCard";
 import Header from "@/components/layout/Header";
 import Sidebar from "@/components/layout/Sidebar";
 
@@ -16,28 +17,28 @@ const summaryCards = [
   {
     title: "Total Balance",
     value: "Rp 14.870.000",
-    Icon: Wallet,
+    icon: Wallet,
     iconBg: "bg-balance-light",
     iconColor: "text-balance",
   },
   {
     title: "Total Income",
     value: "Rp 12.500.000",
-    Icon: ArrowDownLeft,
+    icon: ArrowDownLeft,
     iconBg: "bg-income-light",
     iconColor: "text-income",
   },
   {
     title: "Total Expenses",
     value: "Rp 4.050.000",
-    Icon: ArrowUpRight,
+    icon: ArrowUpRight,
     iconBg: "bg-expense-light",
     iconColor: "text-expense",
   },
   {
     title: "Monthly Insight",
     value: "Rp 2.100.000",
-    Icon: Sparkles,
+    icon: Sparkles,
     iconBg: "bg-insight-light",
     iconColor: "text-insight",
   },
@@ -95,29 +96,17 @@ export default function HomePage() {
           {/* Header */}
           <Header />
 
-          {/* Summary cards */}
+          {/* Summary Cards */}
           <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {summaryCards.map((card) => (
-              <article
+              <SummaryCard
                 key={card.title}
-                className="rounded-2xl border border-border bg-white p-5 shadow-sm"
-              >
-                <div
-                  className={`mb-5 flex h-12 w-12 items-center justify-center rounded-xl ${card.iconBg}`}
-                >
-                  <card.Icon
-                    size={23}
-                    className={card.iconColor}
-                    strokeWidth={2}
-                  />
-                </div>
-
-                <p className="text-sm text-text-secondary">{card.title}</p>
-
-                <h2 className="mt-2 text-[clamp(1.1rem,1.6vw,1.5rem)] font-semibold tracking-tight text-text-primary">
-                  {card.value}
-                </h2>
-              </article>
+                title={card.title}
+                value={card.value}
+                icon={card.icon}
+                iconBg={card.iconBg}
+                iconColor={card.iconColor}
+              />
             ))}
           </section>
 
