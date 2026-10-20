@@ -11,19 +11,18 @@ import {
   ReceiptText,
 } from "lucide-react";
 
+import TransactionModal, {
+  type TransactionFormData,
+} from "@/components/transactions/TransactionModal";
+
 type TransactionType = "income" | "expense";
 type FilterType = "all" | TransactionType;
 
-type Transaction = {
+type Transaction = TransactionFormData & {
   id: number;
-  name: string;
-  category: string;
-  date: string;
-  amount: number;
-  type: TransactionType;
 };
 
-const transactions: Transaction[] = [
+const initialTransactions: Transaction[] = [
   {
     id: 1,
     name: "Monthly Salary",
@@ -31,6 +30,7 @@ const transactions: Transaction[] = [
     date: "2026-10-18",
     amount: 7500000,
     type: "income",
+    description: "",
   },
   {
     id: 2,
@@ -39,6 +39,7 @@ const transactions: Transaction[] = [
     date: "2026-10-17",
     amount: 250000,
     type: "expense",
+    description: "",
   },
   {
     id: 3,
@@ -47,6 +48,7 @@ const transactions: Transaction[] = [
     date: "2026-10-15",
     amount: 2000000,
     type: "income",
+    description: "",
   },
   {
     id: 4,
@@ -55,6 +57,7 @@ const transactions: Transaction[] = [
     date: "2026-10-14",
     amount: 75000,
     type: "expense",
+    description: "",
   },
 ];
 
@@ -75,8 +78,20 @@ function formatDate(date: string) {
 }
 
 export default function TransactionsPage() {
+  const [transactions, setTransactions] =
+    useState<Transaction[]>(initialTransactions);
+
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterType>("all");
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingTransaction, setEditingTransaction] =
+    useState<Transaction | null>(null);
+
+  const [deletingTransaction, setDeletingTransaction] =
+    useState<Transaction | null>(null);
+
+  const [notice, setNotice] = useState("");
 
   const filteredTransactions = useMemo(() => {
     return transactions.filter((transaction) => {
@@ -90,7 +105,60 @@ export default function TransactionsPage() {
 
       return matchesSearch && matchesFilter;
     });
-  }, [search, filter]);
+  }, [transactions, search, filter]);
+
+  function openAddModal() {
+    setEditingTransaction(null);
+    setIsModalOpen(true);
+  }
+
+  function openEditModal(transaction: Transaction) {
+    setEditingTransaction(transaction);
+    setIsModalOpen(true);
+  }
+
+  function closeModal() {
+    setIsModalOpen(false);
+    setEditingTransaction(null);
+  }
+
+  function handleSave(data: TransactionFormData) {
+    if (editingTransaction) {
+      setTransactions((previous) =>
+        previous.map((transaction) =>
+          transaction.id === editingTransaction.id
+            ? { ...transaction, ...data }
+            : transaction,
+        ),
+      );
+
+      setNotice("Transaction updated successfully.");
+    } else {
+      const newTransaction: Transaction = {
+        ...data,
+        id: Date.now(),
+      };
+
+      setTransactions((previous) => [newTransaction, ...previous]);
+
+      setNotice("Transaction added successfully.");
+    }
+
+    closeModal();
+  }
+
+  function handleDelete() {
+    if (!deletingTransaction) return;
+
+    setTransactions((previous) =>
+      previous.filter(
+        (transaction) => transaction.id !== deletingTransaction.id,
+      ),
+    );
+
+    setDeletingTransaction(null);
+    setNotice("Transaction deleted successfully.");
+  }
 
   return (
     <div>
@@ -112,14 +180,31 @@ export default function TransactionsPage() {
 
         <button
           type="button"
-          disabled
-          title="Available in the next development stage"
-          className="flex items-center gap-2 rounded-xl bg-primary px-5 py-3 font-medium text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed"
+          onClick={openAddModal}
+          className="flex items-center gap-2 rounded-xl bg-primary px-5 py-3 font-medium text-white transition-colors hover:bg-primary-hover"
         >
           <Plus size={18} />
           Add Transaction
         </button>
       </header>
+
+      {/* Notice */}
+      {notice && (
+        <div
+          role="status"
+          className="mb-5 flex items-center justify-between rounded-xl border border-border bg-white px-4 py-3 text-sm text-text-primary"
+        >
+          <span>{notice}</span>
+
+          <button
+            type="button"
+            onClick={() => setNotice("")}
+            className="font-medium text-primary"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Transaction Table */}
       <section className="rounded-2xl border border-border bg-white p-5 shadow-sm sm:p-7">
@@ -128,6 +213,7 @@ export default function TransactionsPage() {
             <h2 className="text-lg font-semibold text-text-primary">
               All Transactions
             </h2>
+
             <p className="mt-1 text-sm text-text-secondary">
               {filteredTransactions.length} transactions found
             </p>
@@ -140,6 +226,7 @@ export default function TransactionsPage() {
                 size={17}
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary"
               />
+
               <input
                 type="search"
                 aria-label="Search transactions"
@@ -185,9 +272,11 @@ export default function TransactionsPage() {
                       size={28}
                       className="mx-auto mb-3 text-text-secondary"
                     />
+
                     <p className="font-medium text-text-primary">
                       No transactions found
                     </p>
+
                     <p className="mt-1 text-sm text-text-secondary">
                       Try another keyword or filter.
                     </p>
@@ -217,6 +306,7 @@ export default function TransactionsPage() {
                               <ArrowUpRight size={19} />
                             )}
                           </div>
+
                           <span className="font-medium text-text-primary">
                             {transaction.name}
                           </span>
@@ -256,20 +346,18 @@ export default function TransactionsPage() {
                         <div className="flex justify-end gap-2">
                           <button
                             type="button"
-                            disabled
+                            onClick={() => openEditModal(transaction)}
                             aria-label={`Edit ${transaction.name}`}
-                            title="Available in the next stage"
-                            className="rounded-lg p-2 text-text-secondary disabled:cursor-not-allowed disabled:opacity-50"
+                            className="rounded-lg p-2 text-text-secondary transition-colors hover:bg-primary-light hover:text-primary"
                           >
                             <Pencil size={17} />
                           </button>
 
                           <button
                             type="button"
-                            disabled
+                            onClick={() => setDeletingTransaction(transaction)}
                             aria-label={`Delete ${transaction.name}`}
-                            title="Available in the next stage"
-                            className="rounded-lg p-2 text-text-secondary disabled:cursor-not-allowed disabled:opacity-50"
+                            className="rounded-lg p-2 text-text-secondary transition-colors hover:bg-red-50 hover:text-red-500"
                           >
                             <Trash2 size={17} />
                           </button>
@@ -283,6 +371,57 @@ export default function TransactionsPage() {
           </table>
         </div>
       </section>
+
+      {/* Add / Edit Modal */}
+      <TransactionModal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        onSave={handleSave}
+        initialData={editingTransaction}
+      />
+
+      {/* Delete Confirmation */}
+      {deletingTransaction && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="delete-title"
+            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
+          >
+            <h2
+              id="delete-title"
+              className="text-xl font-semibold text-text-primary"
+            >
+              Delete Transaction?
+            </h2>
+
+            <p className="mt-3 text-sm leading-6 text-text-secondary">
+              Are you sure you want to delete{" "}
+              <strong>{deletingTransaction.name}</strong>? This action cannot be
+              undone.
+            </p>
+
+            <div className="mt-7 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setDeletingTransaction(null)}
+                className="rounded-xl border border-border px-5 py-3 text-sm font-medium"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="rounded-xl bg-red-500 px-5 py-3 text-sm font-medium text-white hover:bg-red-600"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
