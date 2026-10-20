@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -22,44 +22,15 @@ type Transaction = TransactionFormData & {
   id: number;
 };
 
-const initialTransactions: Transaction[] = [
-  {
-    id: 1,
-    name: "Monthly Salary",
-    category: "Salary",
-    date: "2026-10-18",
-    amount: 7500000,
-    type: "income",
-    description: "",
-  },
-  {
-    id: 2,
-    name: "Grocery Shopping",
-    category: "Food & Drinks",
-    date: "2026-10-17",
-    amount: 250000,
-    type: "expense",
-    description: "",
-  },
-  {
-    id: 3,
-    name: "Freelance Project",
-    category: "Freelance",
-    date: "2026-10-15",
-    amount: 2000000,
-    type: "income",
-    description: "",
-  },
-  {
-    id: 4,
-    name: "Transportation",
-    category: "Transport",
-    date: "2026-10-14",
-    amount: 75000,
-    type: "expense",
-    description: "",
-  },
-];
+type TransactionsResponse = {
+  transactions?: Transaction[];
+  message?: string;
+};
+
+type TransactionResponse = {
+  transaction?: Transaction;
+  message?: string;
+};
 
 function formatRupiah(amount: number) {
   return new Intl.NumberFormat("id-ID", {
@@ -78,8 +49,14 @@ function formatDate(date: string) {
 }
 
 export default function TransactionsPage() {
-  const [transactions, setTransactions] =
-    useState<Transaction[]>(initialTransactions);
+  // Data berasal dari MySQL, bukan dummy data.
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const saveInProgress = useRef(false);
+  const deleteInProgress = useRef(false);
 
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterType>("all");
@@ -92,11 +69,45 @@ export default function TransactionsPage() {
     useState<Transaction | null>(null);
 
   const [notice, setNotice] = useState("");
+  const [error, setError] = useState("");
 
+  // GET - Ambil transaksi pengguna dari MySQL.
+  const loadTransactions = useCallback(async () => {
+    try {
+      setError("");
+
+      const response = await fetch("/api/transactions", {
+        method: "GET",
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+
+      const result: TransactionsResponse = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to load transactions.");
+      }
+
+      setTransactions(result.transactions ?? []);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to load transactions.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Ambil data ketika halaman dibuka.
+  useEffect(() => {
+    void loadTransactions();
+  }, [loadTransactions]);
+
+  // Search dan filter tetap dilakukan di frontend.
   const filteredTransactions = useMemo(() => {
-    return transactions.filter((transaction) => {
-      const keyword = search.toLowerCase().trim();
+    const keyword = search.toLowerCase().trim();
 
+    return transactions.filter((transaction) => {
       const matchesSearch =
         transaction.name.toLowerCase().includes(keyword) ||
         transaction.category.toLowerCase().includes(keyword);
@@ -108,56 +119,120 @@ export default function TransactionsPage() {
   }, [transactions, search, filter]);
 
   function openAddModal() {
+    if (saving) return;
+
+    setError("");
     setEditingTransaction(null);
     setIsModalOpen(true);
   }
 
   function openEditModal(transaction: Transaction) {
+    if (saving) return;
+
+    setError("");
     setEditingTransaction(transaction);
     setIsModalOpen(true);
   }
 
   function closeModal() {
+    if (saving) return;
+
     setIsModalOpen(false);
     setEditingTransaction(null);
   }
 
-  function handleSave(data: TransactionFormData) {
-    if (editingTransaction) {
-      setTransactions((previous) =>
-        previous.map((transaction) =>
-          transaction.id === editingTransaction.id
-            ? { ...transaction, ...data }
-            : transaction,
-        ),
+  // POST / PATCH - Simpan transaksi ke MySQL.
+  async function handleSave(data: TransactionFormData) {
+    if (saveInProgress.current) return;
+
+    saveInProgress.current = true;
+    setSaving(true);
+    setNotice("");
+    setError("");
+
+    const isEditing = editingTransaction !== null;
+
+    const url = isEditing
+      ? `/api/transactions/${editingTransaction.id}`
+      : "/api/transactions";
+
+    const method = isEditing ? "PATCH" : "POST";
+
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "same-origin",
+        body: JSON.stringify(data),
+      });
+
+      const result: TransactionResponse = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to save transaction.");
+      }
+
+      // Tutup modal hanya setelah API berhasil.
+      setIsModalOpen(false);
+      setEditingTransaction(null);
+
+      setNotice(
+        isEditing
+          ? "Transaction updated successfully."
+          : "Transaction added successfully.",
       );
 
-      setNotice("Transaction updated successfully.");
-    } else {
-      const newTransaction: Transaction = {
-        ...data,
-        id: Date.now(),
-      };
-
-      setTransactions((previous) => [newTransaction, ...previous]);
-
-      setNotice("Transaction added successfully.");
+      // Sinkronkan tabel dengan data terbaru dari MySQL.
+      await loadTransactions();
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to save transaction.",
+      );
+    } finally {
+      saveInProgress.current = false;
+      setSaving(false);
     }
-
-    closeModal();
   }
 
-  function handleDelete() {
-    if (!deletingTransaction) return;
+  // DELETE - Hapus transaksi dari MySQL.
+  async function handleDelete() {
+    if (!deletingTransaction || deleteInProgress.current) return;
 
-    setTransactions((previous) =>
-      previous.filter(
-        (transaction) => transaction.id !== deletingTransaction.id,
-      ),
-    );
+    deleteInProgress.current = true;
+    setDeleting(true);
+    setNotice("");
+    setError("");
 
-    setDeletingTransaction(null);
-    setNotice("Transaction deleted successfully.");
+    try {
+      const response = await fetch(
+        `/api/transactions/${deletingTransaction.id}`,
+        {
+          method: "DELETE",
+          credentials: "same-origin",
+        },
+      );
+
+      const result: { message?: string } = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to delete transaction.");
+      }
+
+      setDeletingTransaction(null);
+      setNotice("Transaction deleted successfully.");
+
+      // Ambil ulang daftar transaksi dari database.
+      await loadTransactions();
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to delete transaction.",
+      );
+    } finally {
+      deleteInProgress.current = false;
+      setDeleting(false);
+    }
   }
 
   return (
@@ -181,7 +256,8 @@ export default function TransactionsPage() {
         <button
           type="button"
           onClick={openAddModal}
-          className="flex items-center gap-2 rounded-xl bg-primary px-5 py-3 font-medium text-white transition-colors hover:bg-primary-hover"
+          disabled={saving || loading}
+          className="flex items-center gap-2 rounded-xl bg-primary px-5 py-3 font-medium text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Plus size={18} />
           Add Transaction
@@ -206,6 +282,24 @@ export default function TransactionsPage() {
         </div>
       )}
 
+      {/* Error */}
+      {error && (
+        <div
+          role="alert"
+          className="mb-5 flex items-center justify-between gap-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600"
+        >
+          <span>{error}</span>
+
+          <button
+            type="button"
+            onClick={() => setError("")}
+            className="font-medium hover:underline"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* Transaction Table */}
       <section className="rounded-2xl border border-border bg-white p-5 shadow-sm sm:p-7">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
@@ -215,7 +309,9 @@ export default function TransactionsPage() {
             </h2>
 
             <p className="mt-1 text-sm text-text-secondary">
-              {filteredTransactions.length} transactions found
+              {loading
+                ? "Loading transactions..."
+                : `${filteredTransactions.length} transactions found`}
             </p>
           </div>
 
@@ -265,7 +361,16 @@ export default function TransactionsPage() {
             </thead>
 
             <tbody>
-              {filteredTransactions.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td
+                    colSpan={6}
+                    className="py-14 text-center text-text-secondary"
+                  >
+                    Loading transactions...
+                  </td>
+                </tr>
+              ) : filteredTransactions.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-14 text-center">
                     <ReceiptText
@@ -278,7 +383,9 @@ export default function TransactionsPage() {
                     </p>
 
                     <p className="mt-1 text-sm text-text-secondary">
-                      Try another keyword or filter.
+                      {transactions.length === 0
+                        ? "Add your first transaction to get started."
+                        : "Try another keyword or filter."}
                     </p>
                   </td>
                 </tr>
@@ -347,8 +454,9 @@ export default function TransactionsPage() {
                           <button
                             type="button"
                             onClick={() => openEditModal(transaction)}
+                            disabled={saving || deleting}
                             aria-label={`Edit ${transaction.name}`}
-                            className="rounded-lg p-2 text-text-secondary transition-colors hover:bg-primary-light hover:text-primary"
+                            className="rounded-lg p-2 text-text-secondary transition-colors hover:bg-primary-light hover:text-primary disabled:opacity-50"
                           >
                             <Pencil size={17} />
                           </button>
@@ -356,8 +464,9 @@ export default function TransactionsPage() {
                           <button
                             type="button"
                             onClick={() => setDeletingTransaction(transaction)}
+                            disabled={saving || deleting}
                             aria-label={`Delete ${transaction.name}`}
-                            className="rounded-lg p-2 text-text-secondary transition-colors hover:bg-red-50 hover:text-red-500"
+                            className="rounded-lg p-2 text-text-secondary transition-colors hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
                           >
                             <Trash2 size={17} />
                           </button>
@@ -406,7 +515,8 @@ export default function TransactionsPage() {
               <button
                 type="button"
                 onClick={() => setDeletingTransaction(null)}
-                className="rounded-xl border border-border px-5 py-3 text-sm font-medium"
+                disabled={deleting}
+                className="rounded-xl border border-border px-5 py-3 text-sm font-medium disabled:opacity-60"
               >
                 Cancel
               </button>
@@ -414,9 +524,10 @@ export default function TransactionsPage() {
               <button
                 type="button"
                 onClick={handleDelete}
-                className="rounded-xl bg-red-500 px-5 py-3 text-sm font-medium text-white hover:bg-red-600"
+                disabled={deleting}
+                className="rounded-xl bg-red-500 px-5 py-3 text-sm font-medium text-white hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Delete
+                {deleting ? "Deleting..." : "Delete"}
               </button>
             </div>
           </div>
