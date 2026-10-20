@@ -2,25 +2,84 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --background-secondary: #f7f8fa;
+  --surface: #ffffff;
+  --foreground: #1f2430;
+  --border: #e8edf3;
+
+  --text-primary: #1f2430;
+  --text-secondary: #6b7280;
+
+  --primary: #5b55c4;
+  --primary-hover: #4943aa;
+  --primary-light: #f0edff;
+
+  --balance: #4f8cff;
+  --income: #4d9971;
+  --expense: #9b78d0;
+  --insight: #b58b25;
+
+  --balance-light: #dceaff;
+  --income-light: #e3f3e6;
+  --expense-light: #f1e2fb;
+  --insight-light: #fff0b8;
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-background-secondary: var(--background-secondary);
+  --color-surface: var(--surface);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-border: var(--border);
+
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-light: var(--primary-light);
+
+  --color-balance: var(--balance);
+  --color-income: var(--income);
+  --color-expense: var(--expense);
+  --color-insight: var(--insight);
+
+  --color-balance-light: var(--balance-light);
+  --color-income-light: var(--income-light);
+  --color-expense-light: var(--expense-light);
+  --color-insight-light: var(--insight-light);
+
+  --font-sans: var(--font-inter);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
+  margin: 0;
+  min-height: 100vh;
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
 }
