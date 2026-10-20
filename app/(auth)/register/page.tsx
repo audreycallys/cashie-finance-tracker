@@ -2,23 +2,34 @@
 
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowUpRight, Eye, EyeOff, Sparkles } from "lucide-react";
 
 export default function RegisterPage() {
+  const router = useRouter();
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const inputClass =
+    "w-full rounded-xl border border-border bg-white px-4 py-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary-light disabled:opacity-60";
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
-    setNotice("");
 
     if (!name.trim() || !email.trim() || !password) {
       setError("Please fill in all fields.");
+      return;
+    }
+
+    if (name.trim().length < 2) {
+      setError("Name must be at least 2 characters.");
       return;
     }
 
@@ -27,13 +38,40 @@ export default function RegisterPage() {
       return;
     }
 
-    setNotice(
-      "Registration is not available yet. No account has been created.",
-    );
-  }
+    setLoading(true);
 
-  const inputClass =
-    "w-full rounded-xl border border-border bg-white px-4 py-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary-light";
+    try {
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "same-origin",
+        body: JSON.stringify({
+          name: name.trim(),
+          email: email.trim().toLowerCase(),
+          password,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setError(
+          result.message === "Validation failed."
+            ? "Please check your name, email, and password."
+            : result.message || "Registration failed. Please try again.",
+        );
+        return;
+      }
+
+      router.replace("/login?registered=1");
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div>
@@ -71,10 +109,13 @@ export default function RegisterPage() {
             id="name"
             type="text"
             required
+            minLength={2}
+            maxLength={100}
             autoComplete="name"
             placeholder="Enter your full name"
             value={name}
             onChange={(event) => setName(event.target.value)}
+            disabled={loading}
             className={inputClass}
           />
         </div>
@@ -89,10 +130,12 @@ export default function RegisterPage() {
             id="email"
             type="email"
             required
+            maxLength={255}
             autoComplete="email"
             placeholder="you@example.com"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
+            disabled={loading}
             className={inputClass}
           />
         </div>
@@ -109,10 +152,12 @@ export default function RegisterPage() {
               type={showPassword ? "text" : "password"}
               required
               minLength={8}
+              maxLength={72}
               autoComplete="new-password"
               placeholder="At least 8 characters"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
+              disabled={loading}
               className={`${inputClass} pr-12`}
             />
 
@@ -120,7 +165,8 @@ export default function RegisterPage() {
               type="button"
               aria-label={showPassword ? "Hide password" : "Show password"}
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary transition-colors hover:text-primary"
+              disabled={loading}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary transition-colors hover:text-primary disabled:cursor-not-allowed"
             >
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
@@ -134,24 +180,16 @@ export default function RegisterPage() {
           </p>
         )}
 
-        {/* Notice */}
-        {notice && (
-          <p
-            role="status"
-            className="rounded-lg bg-primary-light p-3 text-sm text-primary"
-          >
-            {notice}
-          </p>
-        )}
-
         {/* Submit Button */}
         <div className="pt-6">
           <button
             type="submit"
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
+            disabled={loading}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Create account
-            <ArrowUpRight size={17} />
+            {loading ? "Creating account..." : "Create account"}
+
+            {!loading && <ArrowUpRight size={17} />}
           </button>
         </div>
       </form>
