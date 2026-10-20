@@ -9,26 +9,25 @@ export default async function DashboardLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Ambil cookie session dari browser
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE)?.value;
 
-  // Jika belum login, arahkan ke halaman Login
+  // Pengguna belum login
   if (!token) {
     redirect("/login");
   }
 
-  // Verifikasi keaslian dan masa berlaku session
+  // Verifikasi session
   const session = await verifySessionToken(token);
 
-  // Jika session tidak valid atau kedaluwarsa
+  // Session tidak valid atau kedaluwarsa
   if (!session) {
     redirect("/login");
   }
 
   return (
     <div className="min-h-screen bg-background-secondary text-text-primary">
-      <div className="flex min-h-screen w-full">
+      <div className="flex min-h-screen w-full flex-col md:flex-row">
         <Sidebar />
 
         <main className="min-w-0 flex-1 px-5 py-8 sm:px-8 lg:px-10 lg:py-12">
