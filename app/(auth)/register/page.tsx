@@ -8,7 +8,6 @@ export default function RegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -18,18 +17,13 @@ export default function RegisterPage() {
     setError("");
     setNotice("");
 
-    if (!name.trim() || !email.trim() || !password || !confirmPassword) {
+    if (!name.trim() || !email.trim() || !password) {
       setError("Please fill in all fields.");
       return;
     }
 
     if (password.length < 8) {
       setError("Password must be at least 8 characters.");
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match.");
       return;
     }
 
@@ -43,15 +37,18 @@ export default function RegisterPage() {
 
   return (
     <div>
+      {/* Mobile Brand */}
       <Link href="/login" className="mb-10 flex items-center gap-2 lg:hidden">
         <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary font-bold text-white">
           C
         </span>
+
         <span className="text-xl font-bold text-text-primary">
           cashie<span className="text-primary">.</span>
         </span>
       </Link>
 
+      {/* Header */}
       <Sparkles className="mb-5 text-primary" size={24} />
 
       <h1 className="text-3xl font-semibold tracking-tight text-text-primary">
@@ -62,7 +59,9 @@ export default function RegisterPage() {
         Start managing your finances with Cashie.
       </p>
 
+      {/* Register Form */}
       <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+        {/* Full Name */}
         <div>
           <label htmlFor="name" className="mb-2 block text-sm font-medium">
             Full name
@@ -80,6 +79,7 @@ export default function RegisterPage() {
           />
         </div>
 
+        {/* Email */}
         <div>
           <label htmlFor="email" className="mb-2 block text-sm font-medium">
             Email address
@@ -97,6 +97,7 @@ export default function RegisterPage() {
           />
         </div>
 
+        {/* Password */}
         <div>
           <label htmlFor="password" className="mb-2 block text-sm font-medium">
             Password
@@ -117,42 +118,23 @@ export default function RegisterPage() {
 
             <button
               type="button"
-              aria-label={showPassword ? "Hide passwords" : "Show passwords"}
+              aria-label={showPassword ? "Hide password" : "Show password"}
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary hover:text-primary"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary transition-colors hover:text-primary"
             >
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
         </div>
 
-        <div>
-          <label
-            htmlFor="confirmPassword"
-            className="mb-2 block text-sm font-medium"
-          >
-            Confirm password
-          </label>
-
-          <input
-            id="confirmPassword"
-            type={showPassword ? "text" : "password"}
-            required
-            minLength={8}
-            autoComplete="new-password"
-            placeholder="Confirm your password"
-            value={confirmPassword}
-            onChange={(event) => setConfirmPassword(event.target.value)}
-            className={inputClass}
-          />
-        </div>
-
+        {/* Error Message */}
         {error && (
           <p role="alert" className="text-sm text-red-600">
             {error}
           </p>
         )}
 
+        {/* Notice */}
         {notice && (
           <p
             role="status"
@@ -162,15 +144,19 @@ export default function RegisterPage() {
           </p>
         )}
 
-        <button
-          type="submit"
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-primary-hover"
-        >
-          Create account
-          <ArrowUpRight size={17} />
-        </button>
+        {/* Submit Button */}
+        <div className="pt-6">
+          <button
+            type="submit"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
+          >
+            Create account
+            <ArrowUpRight size={17} />
+          </button>
+        </div>
       </form>
 
+      {/* Login Link */}
       <p className="mt-6 text-center text-sm text-text-secondary">
         Already have an account?{" "}
         <Link

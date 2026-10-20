@@ -120,13 +120,15 @@ export default function LoginPage() {
           </p>
         )}
 
-        <button
-          type="submit"
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-primary-hover"
-        >
-          Sign in
-          <ArrowUpRight size={17} />
-        </button>
+        <div className="pt-6">
+          <button
+            type="submit"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-primary-hover"
+          >
+            Sign in
+            <ArrowUpRight size={17} />
+          </button>
+        </div>
       </form>
 
       <p className="mt-7 text-center text-sm text-text-secondary">
