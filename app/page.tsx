@@ -1,3 +1,5 @@
+import Sidebar from "@/components/layout/Sidebar";
+
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -85,34 +87,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-background-secondary text-text-primary">
       <div className="flex min-h-screen w-full bg-white">
         {/* Sidebar */}
-        <aside className="hidden min-h-screen w-60 shrink-0 border-r border-border bg-white px-5 py-9 md:block">
-          <div className="mb-16 flex items-center gap-3 px-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-xl font-bold text-white">
-              C
-            </div>
-            <span className="text-2xl font-bold tracking-tight">
-              cashie<span className="text-primary">.</span>
-            </span>
-          </div>
-
-          <nav className="space-y-2">
-            <div className="flex items-center gap-3 rounded-xl bg-primary-light px-4 py-3 font-semibold text-primary">
-              <LayoutDashboard size={19} />
-              Dashboard
-            </div>
-
-            <div className="flex items-center gap-3 rounded-xl px-4 py-3 text-text-secondary">
-              <ReceiptText size={19} />
-              Transactions
-            </div>
-          </nav>
-
-          <div className="mt-12 border-t border-border pt-5">
-            <p className="px-3 text-xs text-text-secondary">
-              Your money, made simple.
-            </p>
-          </div>
-        </aside>
+        <Sidebar />
 
         {/* Main */}
         <main className="min-w-0 flex-1 bg-background-secondary px-5 py-8 sm:px-8 lg:px-10 lg:py-12">
@@ -211,10 +186,6 @@ export default function HomePage() {
               </table>
             </div>
           </section>
-
-          <p className="mt-6 text-center text-xs text-text-secondary">
-            Cashie. — Design system preview (mock data)
-          </p>
         </main>
       </div>
     </div>
